@@ -71,7 +71,7 @@ let r = [
                 : 'outdoor' === e.place
                   ? 'Outdoors: the IP67 sealed long run COB in 3000K warm, the IP65 CCT COB if you want to adjust warm ↔ cool, or the IP65 RGB COB for full colour.'
                   : 'neon' === e.place
-                    ? 'Neon flex comes as adjustable white (2700–6000K) or full-colour RGB. Both are IP67 and run on Bluetooth.'
+                    ? 'Neon flex bends on its side, so it follows a curve or a letter. Fixed 3000K warm white (12x12mm), adjustable white 2700–6000K (6x12mm), or full colour. All IP67.'
                     : 'display' === e.place
                       ? 'The 23W/m display strip is made in 4000K natural and 5000K crisp, CRI 90+. IP20 — dry indoor cases and shelving.'
                       : '',
@@ -118,7 +118,8 @@ let r = [
                     ]
                   : 'neon' === e.place
                     ? [
-                        ['Adjustable white — 2700K to 6000K (CCT)', 'cct'],
+                        ['Warm white — 3000K (fixed, 12x12mm side bend)', 'w3000'],
+                        ['Adjustable white — 2700K to 6000K (CCT, 6x12mm)', 'cct'],
                         ['Full colour (RGB)', 'rgb'],
                       ]
                     : [
@@ -316,30 +317,49 @@ function h(e) {
      why they are their own family rather than another kind of strip. */
   if (t.includes('neon')) {
     let r = t.includes('rgb'),
+      /* The 1212 side bend added 21 Sep: 12x12mm, fixed 3000K warm white,
+         premium anti-yellowing silicone, IP67, 5 year warranty. It is a
+         different product from the 6x12mm CCT flex, not a re-colour of it,
+         so it gets its own branch rather than being folded into the CCT one. */
+      warm = !r && /3000/.test(t),
       n = wattsPerMetre({ name: t }, 10),
-      /* Both neon flex products state 5m on a single feed and 10m fed from
+      /* All three neon products state 5m on a single feed and 10m fed from
          both ends on their own product pages. Not derived - taken from there. */
       o = { single: 5, dual: 10 };
     return {
       fam: 'NEON',
       wpm: n,
-      wpmTxt: r ? 'Neon Flex RGB SPI · 12x12mm' : 'Neon Side Bend Flex CCT · 6x12mm',
+      wpmTxt: r
+        ? 'Neon Flex RGB SPI · 12x12mm'
+        : warm
+          ? 'Neon Side Bend Flex 3000K · 12x12mm'
+          : 'Neon Side Bend Flex CCT · 6x12mm',
       single: o.single,
       dual: o.dual,
       channel: 'required',
-      /* Both neon grades are IP67 on the brochure — the RGB one used to be
-         carried here as IP66, off an older product page. */
+      /* All three neon grades are IP67 on the brochure — the RGB one used to
+         be carried here as IP66, off an older product page. */
       spec: r
         ? `24V Neon Flex RGB SPI · 12x12mm · IP67 · fully programmable · ${o.single}m one feed / ${o.dual}m both ends`
-        : `24V Neon Side Bend Flex CCT · 6x12mm · IP67 · 2700–6000K · ${o.single}m one feed / ${o.dual}m both ends`,
+        : warm
+          ? `24V Neon Side Bend Flex · 12x12mm · IP67 · 3000K warm white · premium anti-yellowing silicone · 5 year warranty · ${o.single}m one feed / ${o.dual}m both ends`
+          : `24V Neon Side Bend Flex CCT · 6x12mm · IP67 · 2700–6000K · ${o.single}m one feed / ${o.dual}m both ends`,
       ipTxt: i >= 67 ? `IP${i} — fully sealed, fine outdoors` : `IP${i} — splash resistant`,
       where: 'Signage, curves, letters and feature shapes — anywhere a rigid strip will not bend',
-      teach: [
-        'Side bend: it curves flat on its side, so it follows a shape or a letter',
-        r ? 'Fully programmable colour, addressed section by section' : 'Adjustable warm to cool white, 2700K to 6000K',
-        'Bluetooth control, so it needs no WiFi',
-        r ? 'Sits in a 12x12mm support channel' : 'Sits in a 6x12mm support channel',
-      ],
+      teach: warm
+        ? [
+            'Side bend: it curves flat on its side, so it follows a shape or a letter',
+            'Fixed 3000K warm white — a soft, even glow rather than a colour-changing effect',
+            'Premium anti-yellowing silicone, IP67 — rated indoors and out, and it stays white',
+            'Sits in a 12x12mm channel, or clips into a groove',
+            'Five year warranty',
+          ]
+        : [
+            'Side bend: it curves flat on its side, so it follows a shape or a letter',
+            r ? 'Fully programmable colour, addressed section by section' : 'Adjustable warm to cool white, 2700K to 6000K',
+            'Bluetooth control, so it needs no WiFi',
+            r ? 'Sits in a 12x12mm support channel' : 'Sits in a 6x12mm support channel',
+          ],
     };
   }
 
@@ -776,8 +796,13 @@ export const buildPackage = function (e, i, r, n = {}) {
     let e,
       t,
       i = (t = d(r, (e = '12V' === p ? 'TR12V-ALL' : 'TR24V-ALL'))).length ? t : r.filter((t) => t.sku === e),
-      n = u <= m.single ? u : m.dual ? u / 2 : u,
-      s = Math.ceil(m.wpm * n * 1.2),
+      /* Size for the WHOLE run. The second transformer is optional now, so
+         the one we quote has to carry the lot on its own; sizing it for half
+         the run (which is what this did while it always quoted two) would
+         undersize every dual-feed job. wattsHalf is only used to pick the
+         best available driver when nothing on the shelf covers the whole run. */
+      wattsWhole = Math.ceil(m.wpm * u * 1.2),
+      wattsHalf = Math.ceil((m.wpm * u * 1.2) / 2),
       o = i
         .map((e) => {
           var t;
@@ -791,7 +816,11 @@ export const buildPackage = function (e, i, r, n = {}) {
       /* Outside, or in a bathroom, the driver has to be a sealed one: pick
          from the IP65/IP67 transformers when there is one big enough. */
       sealed = wetSpot ? o.filter((e) => ipRating(e.t) >= 65) : [],
-      pick = (sealed.length ? sealed : o).find((e) => e.watts >= s) || (sealed.length ? sealed : o)[(sealed.length ? sealed : o).length - 1],
+      pool = sealed.length ? sealed : o,
+      /* Can one driver carry the whole run? That is what decides whether the
+         second one is optional or required. */
+      whole = pool.find((e) => e.watts >= wattsWhole) || null,
+      pick = whole || pool.find((e) => e.watts >= wattsHalf) || pool[pool.length - 1],
       a = k('transformer', i, pick?.t);
     (u <= m.single
       ? (y.push({
@@ -807,12 +836,19 @@ export const buildPackage = function (e, i, r, n = {}) {
           y.push({
             key: 'transformer',
             product: a,
-            qty: 2,
-            sub: 'one at EACH end of the run',
+            qty: whole ? 1 : 2,
+            sub: whole
+              ? 'run a feed to EACH end of the strip — second transformer optional'
+              : 'one at EACH end — no single driver carries this run',
             candidates: i,
           }),
           v.push(
-            `Runs over ${m.single}m need power at BOTH ends — that keeps the light even from end to end with no fading (voltage drop). This strip handles up to ${m.dual}m powered both ends.`,
+            `Your ${u}m run is past the ${m.single}m a single feed carries, so the strip has to be powered from BOTH ends. That is what stops the far end fading (voltage drop). This strip handles up to ${m.dual}m powered both ends.`,
+          ),
+          v.push(
+            whole
+              ? 'One transformer does that on its own: run a cable from it to each end of the strip rather than joining the two ends together. A second transformer is OPTIONAL — add one if you would rather each end had its own driver, or if you are close to the wattage limit and want the headroom.'
+              : `No single driver carries a ${u}m run of this strip, so this one is quoted twice — one at each end. Here the second transformer is needed, not optional.`,
           ))
         : ((j = 'both'),
           y.push({
@@ -826,7 +862,7 @@ export const buildPackage = function (e, i, r, n = {}) {
             `Over ${m.dual}m is beyond one continuous run for this strip — break it into segments of up to ${m.dual}m, each powered from both ends. Call us on (08) 9297 2969 and we'll map it out.`,
           )),
       v.push(
-        'Biggest single driver is 240W. Long runs always work better with two smaller drivers (one each end) than one big one.',
+        'Biggest single driver is 240W. Past that, or where you want the headroom, two smaller drivers one at each end beat one big one.',
       ));
   }
   let C = (o = d(r, 'remote-control-grp')).length ? o : r.filter((e) => 'remote-control-grp' === e.sku);
@@ -942,7 +978,7 @@ export const buildPackage = function (e, i, r, n = {}) {
         '240V' === p
           ? 'Includes its $60 240V driver — powers the strip straight from mains'
           : 'both' === j
-            ? 'A driver at BOTH ends — even light the whole way'
+            ? 'Fed from BOTH ends — one driver can do it, a second is optional'
             : 'One driver feeding one end',
       ],
       [
@@ -1071,6 +1107,12 @@ let ROLES = {
   smd20: { sku: 'st24v-20w-SMD-1', rx: /high lumen smd.*20\s*w/i },
   display23: { sku: 'st24v-23w-SMD-1-1', rx: /display.*23\s*w/i },
   meat: { sku: 'MEAT-IP68-14W/m', rx: /fresh meat/i },
+  /* The 1212 fixed warm white side bend. Not in Magento yet at the time of
+     writing, so the SKU here is the expected one and the pattern is what
+     actually finds it: any neon whose name carries 3000K and is not the RGB
+     one. Until it is listed, RESOLVE falls back to the CCT flex set to 3000K,
+     which is a real answer rather than a dead end. */
+  neon3000: { sku: 'NEON-3000K-12x12', rx: /neon(?!.*(rgb|spi)).*3000\s*k?/i },
   neoncct: { sku: 'NEON-CCT-6x12', rx: /neon.*cct/i },
   neonrgb: { sku: 'NEON-RGB-SPI-IP66', rx: /neon.*rgb/i },
   spi: { sku: 'RGBW-SPI-4000K-IP54', rx: /rgbw.*spi/i },
@@ -1125,7 +1167,19 @@ function RESOLVE(t) {
     case 'neon':
       return 'rgb' === c
         ? ['neonrgb', [], '12x12mm Neon Flex RGB, IP67 — side-bends to follow a letter or a curve, Bluetooth control.']
-        : ['neoncct', [], '6x12mm Neon Side Bend Flex CCT, IP67 — adjustable 2700K to 6000K, Bluetooth control.'];
+        : 'w3000' === c
+          ? [
+              'neon3000',
+              ['neoncct'],
+              '12x12mm Neon Side Bend Flex in fixed 3000K warm white, IP67 — premium anti-yellowing silicone, five year warranty, indoors or out. Side-bends to follow a letter or a curve.',
+              /* Fallback while the 1212 is still being listed: the CCT flex
+                 covers 2700–6000K, so it does 3000K on the remote. */
+              {
+                key: 'neoncct',
+                note: 'The fixed 3000K 1212 flex is still being added to the online catalogue. In the meantime the 6x12mm CCT flex below does the same job — set it to 3000K on the remote — or call us on (08) 9297 2969 and we will quote the 1212 direct.',
+              },
+            ]
+          : ['neoncct', [], '6x12mm Neon Side Bend Flex CCT, IP67 — adjustable 2700K to 6000K, Bluetooth control.'];
     case 'display':
       return 'meat' === t.kind
         ? ['meat', [], 'Fresh meat, deli and seafood cabinets get the Fresh Meat strip — a red and white mix that keeps produce looking fresh, IP68 so it can be hosed down.']
@@ -1162,9 +1216,21 @@ export const pickRecommendation = function (e, t) {
       note: "📞 Give us a quick call on (08) 9297 2969 and we'll match the right strip to this one.",
       callOnly: !0,
     };
-  let [pk, ak, note] = r,
+  let [pk, ak, note, fb] = r,
     primary = role(e, pk),
     alts = ak.map((k) => role(e, k)).filter(Boolean);
+  /* A RESOLVE row may name a fallback strip for a product that is real but
+     not listed online yet. Using it beats sending someone to a dead end,
+     provided the screen says plainly what happened — which the fallback
+     note does. */
+  if (!primary && fb) {
+    let sub = role(e, fb.key);
+    if (sub) {
+      primary = sub;
+      note = fb.note;
+      alts = alts.filter((x) => x !== sub);
+    }
+  }
   if (!primary)
     return {
       primary: null,
