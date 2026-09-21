@@ -142,7 +142,7 @@ function KC({ both: e }) {
         <svg
           viewBox="0 0 300 70"
           role="img"
-          aria-label="Power feeds both ends — even light, no fading"
+          aria-label="Power fed to both ends — even light, no fading"
           className="jsx-87e22da7161bfd88"
         >
           <rect x="14" y="22" width="26" height="20" fill="var(--ink)" className="jsx-87e22da7161bfd88" />
@@ -151,12 +151,12 @@ function KC({ both: e }) {
             driver
           </text>
           <text x="273" y="56" fontSize="10" fill="#5d6151" textAnchor="middle" className="jsx-87e22da7161bfd88">
-            driver
+            feed
           </text>
           <rect x="48" y="28" width="204" height="7" rx="2" fill="#46B06E" className="jsx-87e22da7161bfd88" />
           <path d="M40 32 h8 M252 32 h8" stroke="#3E5C46" strokeWidth="2" className="jsx-87e22da7161bfd88" />
           <text x="150" y="18" fontSize="11" fill="#5d6151" textAnchor="middle" className="jsx-87e22da7161bfd88">
-            Power feeds BOTH ends — even light, no fading
+            Power fed to BOTH ends — even light, no fading
           </text>
         </svg>
       ) : (
