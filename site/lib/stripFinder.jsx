@@ -344,7 +344,10 @@ function h(e) {
         : warm
           ? `24V Neon Side Bend Flex · 12x12mm · IP67 · 3000K warm white · premium anti-yellowing silicone · 5 year warranty · ${o.single}m one feed / ${o.dual}m both ends`
           : `24V Neon Side Bend Flex CCT · 6x12mm · IP67 · 2700–6000K · ${o.single}m one feed / ${o.dual}m both ends`,
-      ipTxt: i >= 67 ? `IP${i} — fully sealed, fine outdoors` : `IP${i} — splash resistant`,
+      /* Every neon grade is IP67 on the brochure. None of the product names
+         carry an IP figure, so the parser fell back to IP20 and the card said
+         "splash resistant" right under a spec line reading IP67. */
+      ipTxt: 'IP67 — fully sealed, fine outdoors',
       where: 'Signage, curves, letters and feature shapes — anywhere a rigid strip will not bend',
       teach: warm
         ? [
@@ -1107,12 +1110,11 @@ let ROLES = {
   smd20: { sku: 'st24v-20w-SMD-1', rx: /high lumen smd.*20\s*w/i },
   display23: { sku: 'st24v-23w-SMD-1-1', rx: /display.*23\s*w/i },
   meat: { sku: 'MEAT-IP68-14W/m', rx: /fresh meat/i },
-  /* The 1212 fixed warm white side bend. Not in Magento yet at the time of
-     writing, so the SKU here is the expected one and the pattern is what
-     actually finds it: any neon whose name carries 3000K and is not the RGB
-     one. Until it is listed, RESOLVE falls back to the CCT flex set to 3000K,
-     which is a real answer rather than a dead end. */
-  neon3000: { sku: 'NEON-3000K-12x12', rx: /neon(?!.*(rgb|spi)).*3000\s*k?/i },
+  /* The 1212 fixed warm white side bend, live in Magento as of 21 Sep.
+     The name carries "SPI" (copied from the RGB flex it sits next to), so the
+     pattern cannot exclude SPI the way the first draft did or it would never
+     match its own product. RGB is what actually separates the two. */
+  neon3000: { sku: 'NEON-3000-sideflex-IP67-1', rx: /neon(?!.*\brgb\b).*3000\s*k?/i },
   neoncct: { sku: 'NEON-CCT-6x12', rx: /neon.*cct/i },
   neonrgb: { sku: 'NEON-RGB-SPI-IP66', rx: /neon.*rgb/i },
   spi: { sku: 'RGBW-SPI-4000K-IP54', rx: /rgbw.*spi/i },
